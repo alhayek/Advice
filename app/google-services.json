@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "39626799901",
+    "firebase_url": "https://advice-4dfed.firebaseio.com",
+    "project_id": "advice-4dfed",
+    "storage_bucket": "advice-4dfed.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:39626799901:android:c12530004cf4a124",
+        "android_client_info": {
+          "package_name": "com.advice.android"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "39626799901-0j7ekg5cndd5fvub2o7bh2pvrg5mcu86.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCc2cYdnEpvMLgHWkSLB4uuSyBm85y-UmE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
