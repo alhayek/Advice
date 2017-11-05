@@ -37,6 +37,13 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,24 +78,30 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
-
+    private FirebaseAuth mAuth;;
+    private TextView mResultsLabel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        //Get firebase auth api
+        mAuth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser!=null){
+            //updateUI(currentUser);
+        }
         //Specify Google Auth Api
         GoogleSignInOptions googleSignInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken("39626799901-0j7ekg5cndd5fvub2o7bh2pvrg5mcu86.apps.googleusercontent.com")
                 .requestEmail()
                 .build();
         mGoogleApiClient = new GoogleApiClient.Builder(this).enableAutoManage(this, this).addApi(Auth.GOOGLE_SIGN_IN_API, googleSignInOptions).build();
 
-
-
-
         setContentView(R.layout.activity_login);
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
+        mResultsLabel = (TextView) findViewById(R.id.results_label);
+
         populateAutoComplete();
 
         mPasswordView = (EditText) findViewById(R.id.password);
@@ -115,7 +128,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mProgressView = findViewById(R.id.login_progress);
 
         //Setup Google Sign in Listener
-        com.google.android.gms.common.SignInButton  signInButton = (com.google.android.gms.common.SignInButton)findViewById(R.id.register);
+        Button signInButton = (Button)findViewById(R.id.google_signIn);
         signInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -123,7 +136,68 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
+        //Create listener for email registration
+        Button emailRegistrationInButton = (Button)findViewById(R.id.register);
+        emailRegistrationInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                emailRegistration();
+            }
+        });
+    }
 
+    /**
+     * Said alhayek
+     * Validates both username and password, and highlights any erros.
+     * @return true if data is valid, false otherwise.
+     */
+    private boolean isValidEmailPassword(){
+        //Verify that both an email and password are selected
+        if (mEmailView.getText().toString().isEmpty() ){
+            mEmailView.setHighlightColor(getResources().getColor(R.color.colorError));
+            mEmailView.requestFocus();
+            return false;
+        }
+
+        if (mPasswordView.getText().toString().isEmpty() ){
+            mPasswordView.setHighlightColor(getResources().getColor(R.color.colorError));
+            mPasswordView.requestFocus();
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Said Alhayek
+     * Function to register user via their email and password
+     */
+    private void emailRegistration(){
+
+        if (!isValidEmailPassword()){
+            return;
+        }
+
+        mAuth.createUserWithEmailAndPassword(mEmailView.getText().toString(), mPasswordView.getText().toString())
+            .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                @Override
+                public void onComplete(@NonNull Task<AuthResult> task) {
+                    if (task.isSuccessful()) {
+                        // Sign in success, update UI with the signed-in user's information
+                        Log.d("emailRegistration" , "createUserWithEmail:success");
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        //updateUI(user);
+                    } else {
+                        // If sign in fails, display a message to the user.
+                        Log.w("emailRegistration", "createUserWithEmail:failure", task.getException());
+
+                        mResultsLabel.setText("Authentication failed.");
+                        //updateUI(null);
+                    }
+
+                    // ...
+                }
+            });
     }
 
     private void signIn(){
@@ -131,13 +205,46 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
+
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            //updateUI(user);
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            mResultsLabel.setText("Google Sign In Failed.");
+                            //updateUI(null);
+                        }
+
+                        // ...
+                    }
+                });
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data){
         super.onActivityResult(requestCode, resultCode, data);
-
         if(requestCode==RC_SIGN_IN){
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
             handleSignInResult(result);
+            if (result.isSuccess()){
+                // Google Sign In was successful, authenticate with Firebase
+                GoogleSignInAccount account = result.getSignInAccount();
+                firebaseAuthWithGoogle(account);
+            }
+            else
+            {
+                // If sign in fails, display a message to the user.
+                Log.w("onActivityResult", "googleRegistration:failure");
+                mResultsLabel.setText("Google Registration Failed.");
+            }
 
         }
     }
